@@ -51,7 +51,41 @@ public class BotCommands extends ListenerAdapter {
             case "fullresetcounterbot":
                 handleFullResetCommand(event);
                 break;
+            case "counterratio":
+                handleCounterRatioCommand(event);
+                break;
         }
+    }
+
+    private void handleCounterRatioCommand(SlashCommandInteractionEvent event) {
+        Member member = event.getOption("user").getAsMember();
+        String guildId = event.getGuild().getId();
+        DataManager.BotData data = DataManager.getGuildData(guildId);
+
+        if (member == null) {
+            event.reply("Could not find the specified user.").setEphemeral(true).queue();
+            return;
+        }
+
+        DataManager.UserData userData = data.users.get(member.getId());
+        if (userData == null || userData.totalCount == 0) {
+            event.reply(member.getEffectiveName() + " has no counts yet.").setEphemeral(true).queue();
+            return;
+        }
+
+        long totalServerCount = data.users.values().stream().mapToLong(u -> u.totalCount).sum();
+        if (totalServerCount == 0) {
+            event.reply("There are no counts in this server yet.").setEphemeral(true).queue();
+            return;
+        }
+
+        double ratio = (double) userData.totalCount / totalServerCount;
+        double percentage = ratio * 100;
+
+        String countTerm = data.leaderboardPrefix.isEmpty() ? "count" : data.leaderboardPrefix + " count";
+        event.reply(String.format("%s has %d of the server's %d total %s (%.2f%%).",
+                member.getEffectiveName(), userData.totalCount, totalServerCount, countTerm, percentage))
+                .queue();
     }
 
     private void handleHelpCommand(SlashCommandInteractionEvent event) {
@@ -66,6 +100,7 @@ public class BotCommands extends ListenerAdapter {
         embed.addField("/resetleaderboardtitle", "Resets the leaderboard title to \"Leaderboard\". (Requires \"Counter Mod Master\" role)", false);
         embed.addField("/counterbothelp", "Displays this help message.", false);
         embed.addField("/fullresetcounterbot", "Resets all bot data for this server (leaderboard prefix, all counts and users). (Requires \"Counter Mod Master\" role)", false);
+        embed.addField("/counterratio <user>", "Calculates the ratio/percentage of a user's total count against the server total.", false);
 
         event.replyEmbeds(embed.build()).queue();
     }
@@ -86,6 +121,7 @@ public class BotCommands extends ListenerAdapter {
     }
 
     private void handleAddCommand(SlashCommandInteractionEvent event) {
+        event.deferReply(false).queue(); // Acknowledge the interaction
         if (!isModerator(event.getMember())) {
             event.reply("You do not have permission to use this command.").setEphemeral(true).queue();
             return;
@@ -109,7 +145,7 @@ public class BotCommands extends ListenerAdapter {
         if (reason != null && !reason.isEmpty()) {
             replyMessage += " Reason: " + reason;
         }
-        event.reply(replyMessage).queue();
+        event.getHook().sendMessage(replyMessage).setEphemeral(false).queue();
     }
 
     private String getUserName(Guild guild, String userId, int maxNameLength) {

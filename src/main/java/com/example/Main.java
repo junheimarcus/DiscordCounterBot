@@ -36,7 +36,9 @@ public class Main {
                         .addOption(OptionType.STRING, "prefix", "The prefix for the leaderboard title.", true),
                 Commands.slash("resetleaderboardtitle", "Resets the leaderboard title to default."),
                 Commands.slash("counterbothelp", "Displays the bot's commands."),
-                Commands.slash("fullresetcounterbot", "Resets all bot data for this server (leaderboard prefix, all counts and users).")
+                Commands.slash("fullresetcounterbot", "Resets all bot data for this server (leaderboard prefix, all counts and users)."),
+                Commands.slash("counterratio", "Calculates the ratio of a user's count to the server's total count.")
+                        .addOption(OptionType.USER, "user", "The user to calculate the ratio for.", true)
         ).queue();
 
         new DailyReset().start();
