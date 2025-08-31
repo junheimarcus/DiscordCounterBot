@@ -123,7 +123,7 @@ public class BotCommands extends ListenerAdapter {
     private void handleAddCommand(SlashCommandInteractionEvent event) {
         event.deferReply(false).queue(); // Acknowledge the interaction
         if (!isModerator(event.getMember())) {
-            event.reply("You do not have permission to use this command.").setEphemeral(true).queue();
+            event.getHook().sendMessage("You do not have permission to use this command.").setEphemeral(true).queue();
             return;
         }
 
